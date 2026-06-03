@@ -1,3 +1,4 @@
+```html
 <html lang="id">
 <head>
     <meta charset="UTF-8"></meta>
@@ -46,6 +47,21 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
+        /* Style untuk Toast Notification Kustom */
+        .toast-notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            animation: slideUp 0.3s ease-out;
+            max-width: calc(100vw - 48px);
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
@@ -57,9 +73,18 @@
                 <i class="text-blue-600 w-6 h-6" data-lucide="shopping-bag"></i>
                 <h1 class="text-xl font-bold text-gray-900 tracking-tight">Katalog<span class="text-blue-600">Pedia</span></h1>
             </div>
-            <div class="text-sm text-gray-500 flex items-center gap-1">
-                <i class="w-4 h-4 text-green-500" data-lucide="check-circle-2"></i>
-                <span class="hidden sm:inline">Terpercaya &amp; Aman</span>
+            
+            <div class="flex items-center gap-4">
+                <!-- Tombol Keranjang Belanja -->
+                <button onclick="openCartModal()" class="relative p-2 text-gray-600 hover:text-blue-600 transition focus:outline-none" aria-label="Keranjang Belanja">
+                    <i class="w-6 h-6" data-lucide="shopping-cart"></i>
+                    <span id="cart-badge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">0</span>
+                </button>
+
+                <div class="text-sm text-gray-500 flex items-center gap-1">
+                    <i class="w-4 h-4 text-green-500" data-lucide="check-circle-2"></i>
+                    <span class="hidden sm:inline">Terpercaya &amp; Aman</span>
+                </div>
             </div>
         </div>
     </header>
@@ -95,6 +120,48 @@
         </div>
     </footer>
 
+    <!-- Modal Keranjang Belanja -->
+    <div class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-0" id="cart-modal">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm modal-backdrop" onclick="closeCartModal()"></div>
+        
+        <!-- Modal Container -->
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md relative z-10 modal-content overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div class="flex items-center gap-2">
+                    <i class="text-blue-600 w-5 h-5" data-lucide="shopping-cart"></i>
+                    <h3 class="text-lg font-bold text-gray-900">Keranjang Belanja</h3>
+                </div>
+                <button class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition" onclick="closeCartModal()">
+                    <i class="w-5 h-5" data-lucide="x"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="px-6 py-4 overflow-y-auto flex-grow" id="cart-items-container">
+                <!-- Item Keranjang dinamis di sini -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 border-t border-gray-100 bg-white">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-sm font-medium text-gray-500">Total Belanja:</span>
+                    <span class="text-xl font-extrabold text-blue-600" id="cart-total-price">Rp.0</span>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeCartModal()" class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl transition text-sm">
+                        Tambah Barang
+                    </button>
+                    <button onclick="proceedToCheckout()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-100 transition text-sm flex items-center justify-center gap-2">
+                        Lanjut ke CO <i class="w-4 h-4" data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Pembayaran (Checkout) -->
     <div class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-0" id="checkout-modal">
         <!-- Backdrop -->
@@ -112,22 +179,20 @@
             </div>
 
             <!-- Modal Body -->
-            <div class="px-6 py-4 overflow-y-auto">
+            <div class="px-6 py-4 overflow-y-auto flex-grow">
+                <!-- Ringkasan Produk dalam Keranjang -->
                 <div class="bg-blue-50/50 rounded-xl p-4 mb-5 border border-blue-100">
                     <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">Ringkasan Pesanan</p>
-                    <div class="flex gap-3 items-start">
-                        <img alt="Product" class="w-16 h-16 rounded-lg object-cover border border-gray-200" id="modal-item-image" src="" />
-                        <div>
-                            <p class="text-sm font-medium text-gray-900 leading-snug line-clamp-2" id="modal-item-name"></p>
-                            <p class="text-lg font-bold text-blue-600 mt-1" id="modal-item-price"></p>
-                        </div>
+                    <div class="max-h-40 overflow-y-auto space-y-3 pr-1" id="checkout-items-list">
+                        <!-- List barang dinamis -->
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-blue-100 flex justify-between items-center">
+                        <span class="text-sm font-semibold text-gray-700">Total Pembayaran:</span>
+                        <span class="text-lg font-bold text-blue-600" id="checkout-total-price">Rp.0</span>
                     </div>
                 </div>
 
-                <form class="space-y-4" id="checkout-form">
-                    <input id="item-name-input" type="hidden" />
-                    <input id="item-price-input" type="hidden" />
-
+                <form class="space-y-4" id="checkout-form" onsubmit="event.preventDefault();">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1" for="buyer-name">Nama Lengkap <span class="text-red-500">*</span></label>
                         <input class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm" id="buyer-name" placeholder="Masukkan nama Anda" required="" type="text" />
@@ -146,12 +211,40 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1" for="buyer-address">Alamat Pengiriman <span class="text-red-500">*</span></label>
                         <textarea class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm resize-none" id="buyer-address" placeholder="Masukkan alamat lengkap (Jalan, RT/RW, Kelurahan, Kecamatan, Kota)" required="" rows="3"></textarea>
                     </div>
+
+                    <!-- Pilihan Metode Pembayaran -->
+                    <div class="pt-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Metode Pembayaran <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div onclick="selectPaymentMethod('qris')" id="pay-qris-card" class="border-2 border-gray-200 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/10 transition relative">
+                                <input type="radio" name="payment_method" value="qris" id="pay-qris" class="sr-only" required>
+                                <i data-lucide="qr-code" class="w-6 h-6 text-gray-600 mb-1"></i>
+                                <span class="text-xs font-bold text-gray-800">QRIS</span>
+                                <div class="absolute top-1.5 right-1.5 text-blue-600 hidden" id="qris-check-icon">
+                                    <i data-lucide="check-circle-2" class="w-4 h-4 fill-blue-50"></i>
+                                </div>
+                            </div>
+                            <div onclick="selectPaymentMethod('bri')" id="pay-bri-card" class="border-2 border-gray-200 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/10 transition relative">
+                                <input type="radio" name="payment_method" value="bri" id="pay-bri" class="sr-only">
+                                <span class="text-sm font-extrabold text-blue-700 mb-1">BRI</span>
+                                <span class="text-xs font-bold text-gray-800">Bank Transfer</span>
+                                <div class="absolute top-1.5 right-1.5 text-blue-600 hidden" id="bri-check-icon">
+                                    <i data-lucide="check-circle-2" class="w-4 h-4 fill-blue-50"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tampilan Informasi Pembayaran Terpilih -->
+                        <div id="payment-details" class="p-4 bg-gray-50 border border-gray-200 rounded-xl hidden transition-all duration-300">
+                            <!-- Diisi oleh JS -->
+                        </div>
+                    </div>
                 </form>
             </div>
 
             <!-- Modal Footer -->
             <div class="px-6 py-4 border-t border-gray-100 bg-white">
-                <button class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-green-200 transition flex items-center justify-center gap-2" onclick="submitOrder()" type="button">
+                <button class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-green-200 transition flex items-center justify-center gap-2 focus:outline-none" onclick="submitOrder()" type="button">
                     <i class="w-5 h-5" data-lucide="message-circle"></i>
                     Beli via WhatsApp
                 </button>
@@ -164,10 +257,10 @@
 
     <!-- JavaScript Data dan Logika -->
     <script>
-        // Inisialisasi Ikon
+        // Inisialisasi Ikon Awal
         lucide.createIcons();
 
-        // Data Produk
+        // Data Produk Asli (Tidak Berubah)
         const products = [
           {
                 id: 1,
@@ -241,10 +334,33 @@
             }
         ];
 
+        // State Utama Keranjang Belanja
+        let cart = [];
+        let selectedPayment = '';
+
+        // Memuat keranjang dari localStorage jika ada
+        try {
+            const savedCart = localStorage.getItem('tokopedia_cart_data');
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+            }
+        } catch (e) {
+            console.error("Gagal memuat data keranjang", e);
+        }
+
         function formatNumber(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
+        function parsePrice(priceStr) {
+            return parseInt(priceStr.replace(/[^0-9]/g, ''), 10);
+        }
+
+        function formatRupiah(num) {
+            return "Rp." + formatNumber(num);
+        }
+
+        // Render Product Grid
         const grid = document.getElementById('product-grid');
         
         products.forEach(product => {
@@ -262,34 +378,227 @@
                     <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 leading-tight mb-2 group-hover:text-blue-600 transition-colors" title="${product.name}">${product.name}</h3>
                     <div class="mt-auto">
                         <p class="text-lg font-bold text-blue-600 mb-3">${product.price}</p>
-                        <button onclick="openModal(${product.id})" class="w-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm border border-blue-100 hover:border-blue-600">
-                            <i data-lucide="shopping-cart" class="w-4 h-4"></i> Beli
-                        </button>
+                        <div class="flex gap-2">
+                            <!-- Tombol Tambah ke Keranjang -->
+                            <button onclick="addToCart(${product.id})" class="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1 text-xs border border-blue-100 hover:border-blue-600" title="Tambahkan ke Keranjang">
+                                <i data-lucide="shopping-cart" class="w-4 h-4"></i> +Keranjang
+                            </button>
+                            <!-- Tombol Langsung Beli -->
+                            <button onclick="buyNow(${product.id})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1 text-xs shadow-sm shadow-blue-100">
+                                Beli
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
             grid.appendChild(card);
         });
         
+        // Render ikon lucide awal
         lucide.createIcons();
+        updateCartBadge();
+
+        // --- SISTEM KERANJANG (CART SYSTEM) ---
+
+        function updateCartBadge() {
+            const badge = document.getElementById('cart-badge');
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            if (totalItems > 0) {
+                badge.textContent = totalItems;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function saveCart() {
+            try {
+                localStorage.setItem('tokopedia_cart_data', JSON.stringify(cart));
+            } catch (e) {
+                console.error("Gagal menyimpan data keranjang", e);
+            }
+            updateCartBadge();
+        }
+
+        function addToCart(productId, showConfirm = true) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.image,
+                    quantity: 1
+                });
+            }
+            
+            saveCart();
+            if (showConfirm) {
+                showToast(`"${product.name}" berhasil ditambahkan ke keranjang!`);
+            }
+        }
+
+        function buyNow(productId) {
+            // Logika Pembelian Langsung: otomatis tambahkan ke keranjang dan buka checkout modal
+            const existingItem = cart.find(item => item.id === productId);
+            if (!existingItem) {
+                addToCart(productId, false);
+            }
+            proceedToCheckout();
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            saveCart();
+            renderCartItems();
+        }
+
+        function updateQuantity(productId, change) {
+            const item = cart.find(item => item.id === productId);
+            if (!item) return;
+
+            item.quantity += change;
+            if (item.quantity <= 0) {
+                removeFromCart(productId);
+            } else {
+                saveCart();
+                renderCartItems();
+            }
+        }
+
+        function getCartTotal() {
+            return cart.reduce((total, item) => {
+                return total + (parsePrice(item.price) * item.quantity);
+            }, 0);
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cart-items-container');
+            const totalPriceEl = document.getElementById('cart-total-price');
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                        <i class="w-16 h-16 text-gray-300 mb-4" data-lucide="shopping-cart"></i>
+                        <p class="text-gray-500 font-medium">Keranjang Anda Kosong</p>
+                        <p class="text-xs text-gray-400 mt-1">Silakan pilih beberapa produk di etalase kami.</p>
+                    </div>
+                `;
+                totalPriceEl.textContent = 'Rp.0';
+                lucide.createIcons();
+                return;
+            }
+
+            let html = '<div class="space-y-4">';
+            cart.forEach(item => {
+                const itemTotal = parsePrice(item.price) * item.quantity;
+                html += `
+                    <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <img src="${item.image}" alt="${item.name}" class="w-16 h-16 rounded-lg object-cover border border-gray-200">
+                        <div class="flex-grow min-w-0">
+                            <p class="text-sm font-semibold text-gray-800 line-clamp-1 leading-snug">${item.name}</p>
+                            <p class="text-sm font-bold text-blue-600 mt-0.5">${item.price}</p>
+                            
+                            <div class="flex items-center justify-between mt-2">
+                                <div class="flex items-center border border-gray-200 bg-white rounded-lg overflow-hidden">
+                                    <button onclick="updateQuantity(${item.id}, -1)" class="px-2 py-1 text-gray-500 hover:bg-gray-100 transition focus:outline-none">
+                                        <i class="w-3.5 h-3.5" data-lucide="minus"></i>
+                                    </button>
+                                    <span class="px-3 py-0.5 text-xs font-bold text-gray-800 border-x border-gray-200 bg-gray-50/50">${item.quantity}</span>
+                                    <button onclick="updateQuantity(${item.id}, 1)" class="px-2 py-1 text-gray-500 hover:bg-gray-100 transition focus:outline-none">
+                                        <i class="w-3.5 h-3.5" data-lucide="plus"></i>
+                                    </button>
+                                </div>
+                                
+                                <button onclick="removeFromCart(${item.id})" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition focus:outline-none">
+                                    <i class="w-4 h-4" data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+            totalPriceEl.textContent = formatRupiah(getCartTotal());
+            lucide.createIcons();
+        }
+
+        function openCartModal() {
+            renderCartItems();
+            const cartModal = document.getElementById('cart-modal');
+            cartModal.classList.remove('hidden');
+            cartModal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCartModal() {
+            const cartModal = document.getElementById('cart-modal');
+            cartModal.classList.add('hidden');
+            cartModal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+
+        // --- SISTEM CHECKOUT & METODE PEMBAYARAN ---
 
         const modal = document.getElementById('checkout-modal');
         const form = document.getElementById('checkout-form');
 
-        function openModal(productId) {
-            const product = products.find(p => p.id === productId);
-            if (!product) return;
+        function proceedToCheckout() {
+            if (cart.length === 0) {
+                showToast("Keranjang belanja Anda masih kosong!", "error");
+                return;
+            }
 
-            document.getElementById('modal-item-image').src = product.image;
-            document.getElementById('modal-item-name').textContent = product.name;
-            document.getElementById('modal-item-price').textContent = product.price;
+            closeCartModal();
+
+            // Rancang Ringkasan Pemesanan Dinamis
+            const checkoutItemsList = document.getElementById('checkout-items-list');
+            const checkoutTotalPrice = document.getElementById('checkout-total-price');
+
+            let listHtml = '';
+            cart.forEach(item => {
+                const subtotal = parsePrice(item.price) * item.quantity;
+                listHtml += `
+                    <div class="flex gap-3 items-center py-2 border-b border-blue-50/50 last:border-0">
+                        <img src="${item.image}" alt="${item.name}" class="w-10 h-10 rounded-lg object-cover border border-gray-100">
+                        <div class="flex-grow min-w-0">
+                            <p class="text-xs font-bold text-gray-900 leading-tight line-clamp-1">${item.name}</p>
+                            <p class="text-xs text-gray-500 mt-0.5">${item.quantity}x @ ${item.price}</p>
+                        </div>
+                        <span class="text-xs font-bold text-blue-600">${formatRupiah(subtotal)}</span>
+                    </div>
+                `;
+            });
+
+            checkoutItemsList.innerHTML = listHtml;
+            checkoutTotalPrice.textContent = formatRupiah(getCartTotal());
+
+            // Reset Form Pilihan Pembayaran
+            selectedPayment = '';
+            document.getElementById('pay-qris').checked = false;
+            document.getElementById('pay-bri').checked = false;
+            document.getElementById('qris-check-icon').classList.add('hidden');
+            document.getElementById('bri-check-icon').classList.add('hidden');
+            document.getElementById('pay-qris-card').className = 'border-2 border-gray-200 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/10 transition relative';
+            document.getElementById('pay-bri-card').className = 'border-2 border-gray-200 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/10 transition relative';
             
-            document.getElementById('item-name-input').value = product.name;
-            document.getElementById('item-price-input').value = product.price;
+            const paymentDetails = document.getElementById('payment-details');
+            paymentDetails.classList.add('hidden');
+            paymentDetails.innerHTML = '';
 
+            // Tampilkan Modal Checkout
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
+
+            lucide.createIcons();
         }
 
         function closeModal() {
@@ -299,27 +608,149 @@
             form.reset();
         }
 
+        // Handle Pemilihan Metode Pembayaran
+        function selectPaymentMethod(method) {
+            selectedPayment = method;
+
+            document.getElementById('pay-qris').checked = (method === 'qris');
+            document.getElementById('pay-bri').checked = (method === 'bri');
+
+            const qrisCard = document.getElementById('pay-qris-card');
+            const briCard = document.getElementById('pay-bri-card');
+            const qrisCheck = document.getElementById('qris-check-icon');
+            const briCheck = document.getElementById('bri-check-icon');
+            const detailsBox = document.getElementById('payment-details');
+
+            if (method === 'qris') {
+                qrisCard.className = 'border-2 border-blue-600 bg-blue-50/30 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition relative';
+                briCard.className = 'border-2 border-gray-200 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/10 transition relative';
+                qrisCheck.classList.remove('hidden');
+                briCheck.classList.add('hidden');
+
+                const totalNominal = getCartTotal();
+                detailsBox.classList.remove('hidden');
+                detailsBox.innerHTML = `
+                    <div class="text-center space-y-2">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pindai QRIS Untuk Membayar</p>
+                        <p class="text-sm font-extrabold text-blue-700">PT ZHEDVANOIS CREATIVE AGENCY</p>
+                        <div class="w-44 h-44 mx-auto border border-gray-200 rounded-lg overflow-hidden bg-white p-1 shadow-sm">
+                            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhnQDck-3LLV0c9g_q0ZwI9YIwzGqUqW5eX8Vgtb7r8wWqoWVo6cxbnGGw8LlBDp07iFuo_Ldw6XNDdOvZLwnU9_Wc8ZvKgy6pFt2m-pyo04e6wiZsW61_Z_F8QjY_TWu3VHLfy0nSgnDRkW1rYLRR5BABlbwtqnrGN88r2fTUMU-8NYyH3Eb3ZfuAffplL/s572/376e4202-8cfe-479d-967b-35fb7cef656f.jpeg" alt="QRIS PT ZHEDVANOIS" class="w-full h-full object-contain">
+                        </div>
+                        <div class="pt-1">
+                            <p class="text-[11px] text-gray-500">Nominal yang harus dibayarkan:</p>
+                            <p class="text-base font-extrabold text-red-600">${formatRupiah(totalNominal)}</p>
+                        </div>
+                    </div>
+                `;
+            } else if (method === 'bri') {
+                qrisCard.className = 'border-2 border-gray-200 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/10 transition relative';
+                briCard.className = 'border-2 border-blue-600 bg-blue-50/30 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition relative';
+                qrisCheck.classList.add('hidden');
+                briCheck.classList.remove('hidden');
+
+                detailsBox.classList.remove('hidden');
+                detailsBox.innerHTML = `
+                    <div class="space-y-3 text-xs">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Transfer Bank Mandiri/BRI</p>
+                        <div class="bg-white p-3 rounded-lg border border-gray-200 space-y-1">
+                            <p class="text-[10px] text-gray-400 font-medium">Nomor Rekening</p>
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-sm text-gray-900 tracking-wider">64680100012569</span>
+                                <button onclick="copyToClipboard('64680100012569')" class="text-blue-600 hover:text-blue-800 text-[10px] font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded focus:outline-none">
+                                    <i data-lucide="copy" class="w-3 h-3"></i> Salin
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg border border-gray-200 space-y-1">
+                            <p class="text-[10px] text-gray-400 font-medium">Nama Bank &amp; Penerima</p>
+                            <p class="font-bold text-gray-900 text-[11px]">BRI - PT ZHEDVANOIS CREATIVE AGENCY</p>
+                        </div>
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        // Fungsi Kustom Mengirim Pesan WhatsApp & Validasi Form
         function submitOrder() {
             const name = document.getElementById('buyer-name').value.trim();
             const phone = document.getElementById('buyer-phone').value.trim();
             const address = document.getElementById('buyer-address').value.trim();
             
             if (!name || !phone || !address) {
-                alert("Mohon lengkapi semua data sebelum melanjutkan.");
+                showToast("Mohon lengkapi semua data pengiriman terlebih dahulu.", "error");
                 return;
             }
 
-            const itemName = document.getElementById('item-name-input').value;
-            const itemPrice = document.getElementById('item-price-input').value;
+            if (!selectedPayment) {
+                showToast("Mohon pilih metode pembayaran Anda.", "error");
+                return;
+            }
+
             const targetPhone = "6285190002348";
 
-            const message = `Halo, saya ingin memesan barang berikut:\n\n*Detail Pesanan:*\n🛍️ Barang: ${itemName}\n💰 Harga: ${itemPrice}\n\n*Data Pengiriman:*\n👤 Nama: ${name}\n📞 No. WA: ${phone}\n🏠 Alamat: ${address}\n\nMohon informasi ketersediaan dan metode pembayarannya. Terima kasih!`;
+            // Format isi rincian barang untuk chat WhatsApp
+            let itemsMessage = '';
+            cart.forEach((item, idx) => {
+                const subTotal = parsePrice(item.price) * item.quantity;
+                itemsMessage += `${idx + 1}. ${item.name} (${item.quantity}x) = ${formatRupiah(subTotal)}\n`;
+            });
+
+            const totalPayable = formatRupiah(getCartTotal());
+            const paymentText = selectedPayment === 'qris' 
+                ? 'QRIS (PT ZHEDVANOIS CREATIVE AGENCY)' 
+                : 'Transfer Bank (64680100012569 BRI a.n PT ZHEDVANOIS CREATIVE AGENCY)';
+
+            // Template pesan WhatsApp profesional
+            const message = `Halo, saya ingin memesan barang berikut:\n\n*🛍️ DETAIL PESANAN:*\n${itemsMessage}\n💰 *Total Pembayaran:* ${totalPayable}\n💳 *Metode Pembayaran:* ${paymentText}\n\n*🏠 DATA PENGIRIMAN:*\n👤 Nama Lengkap: ${name}\n📞 No. WhatsApp: +62${phone}\n📍 Alamat Lengkap:\n${address}\n\nMohon informasi ketersediaan barang dan konfirmasi pembayarannya. Terima kasih!`;
 
             const encodedMessage = encodeURIComponent(message);
             const waUrl = `https://wa.me/${targetPhone}?text=${encodedMessage}`;
 
+            // Reset keranjang belanja setelah checkout berhasil diajukan
+            cart = [];
+            saveCart();
+
             window.open(waUrl, '_blank');
             closeModal();
+        }
+
+        // --- SISTEM TOAST & SALIN PAPAN KLIP (CLIPBOARD) ---
+
+        function showToast(message, type = 'success') {
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast-notification bg-white border border-gray-100 ${type === 'success' ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'}`;
+            
+            const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+            const iconColor = type === 'success' ? 'text-green-500' : 'text-red-500';
+
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-5 h-5 ${iconColor}"></i>
+                <span class="text-sm font-semibold text-gray-800">${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function copyToClipboard(text) {
+            const tempInput = document.createElement('input');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast("Nomor rekening berhasil disalin!");
         }
     </script>
 </body>
